@@ -4,13 +4,15 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 type OtpType = "magiclink" | "recovery" | "signup" | "invite" | "email_change";
 
-function parseHashParams(hash: string): {
+type HashParams = {
   access_token: string | null;
   refresh_token: string | null;
   expires_in: string | null;
   token_type: string | null;
   type: string | null;
-} {
+};
+
+function parseHashParams(hash: string): HashParams {
   const q = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
   return {
     access_token: q.get("access_token"),
@@ -49,8 +51,10 @@ export default function AuthCallback() {
         else if (qp.token_hash && qp.type) {
           const allowed: ReadonlyArray<OtpType> = ["magiclink", "recovery", "signup", "invite", "email_change"];
           if (allowed.includes(qp.type as OtpType)) {
-            const t = qp.type as OtpType;
-            const { error } = await supabase.auth.verifyOtp({ type: t, token_hash: qp.token_hash });
+            const { error } = await supabase.auth.verifyOtp({
+              type: qp.type as OtpType,
+              token_hash: qp.token_hash,
+            });
             if (error) throw error;
             setStatus("ok");
           } else {
@@ -62,8 +66,7 @@ export default function AuthCallback() {
           const { error } = await supabase.auth.exchangeCodeForSession(url.toString());
           if (error) throw error;
           setStatus("ok");
-        }
-        else {
+        } else {
           throw new Error("No tokens, token_hash, or code present in callback URL");
         }
 

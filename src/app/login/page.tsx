@@ -34,7 +34,7 @@ export default function LoginPage() {
           type="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.currentTarget.value)}
           className="w-full max-w-sm px-3 py-2 border rounded"
         />
 
