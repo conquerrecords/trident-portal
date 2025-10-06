@@ -5,21 +5,22 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string|null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function sendLink() {
     setError(null);
     try {
       const supabase = createSupabaseBrowser();
-const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: redirectTo }
+        options: { emailRedirectTo: redirectTo },
       });
       if (error) throw error;
       setSent(true);
-    } catch (e:any) {
-      setError(e.message || "Failed to send link");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
     }
   }
 

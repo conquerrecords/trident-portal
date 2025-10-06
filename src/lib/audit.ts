@@ -1,12 +1,18 @@
 import { supabaseServer } from "@/lib/supabase-server";
 
-export async function logAudit(action: string, userId: string | null = null, details: any = {}) {
+// JSON-safe type for metadata
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
+
+export async function logAudit(event: string, details?: Json) {
   const supabase = supabaseServer();
-  const { error } = await supabase.from("audit_logs").insert([
-    { user_id: userId, action, details }
-  ]);
-  if (error) {
-    console.error("[AUDIT ERROR]", error);
-    throw error;
-  }
+  const payload: { event: string; details?: Json } = { event };
+  if (typeof details !== "undefined") payload.details = details;
+
+  return supabase.from("audit_logs").insert(payload);
 }
