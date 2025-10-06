@@ -8,11 +8,6 @@ export type Json =
   | { [key: string]: Json }
   | Json[];
 
-/**
- * Insert an audit log row.
- * @param event short event key (e.g., "login", "module_view")
- * @param details optional JSON payload
- */
 export async function logAudit(event: string, details?: Json) {
   const supabase = supabaseServer();
   const payload: { event: string; details?: Json } = { event };

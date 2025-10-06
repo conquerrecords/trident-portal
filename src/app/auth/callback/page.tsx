@@ -38,7 +38,6 @@ export default function AuthCallback() {
         const qp = Object.fromEntries(url.searchParams.entries()) as Record<string, string>;
         const hp = parseHashParams(url.hash);
 
-        // 1) Magic link tokens in hash (legacy/mobile style)
         if (hp.access_token && hp.refresh_token) {
           const { error } = await supabase.auth.setSession({
             access_token: hp.access_token,
@@ -46,23 +45,16 @@ export default function AuthCallback() {
           });
           if (error) throw error;
           setStatus("ok");
-        }
-        // 2) Magic link / recovery / invite / email_change via token_hash
-        else if (qp.token_hash && qp.type) {
+        } else if (qp.token_hash && qp.type) {
           const allowed: ReadonlyArray<OtpType> = ["magiclink", "recovery", "signup", "invite", "email_change"];
-          if (allowed.includes(qp.type as OtpType)) {
-            const { error } = await supabase.auth.verifyOtp({
-              type: qp.type as OtpType,
-              token_hash: qp.token_hash,
-            });
-            if (error) throw error;
-            setStatus("ok");
-          } else {
-            throw new Error(`Unsupported OTP type: ${qp.type}`);
-          }
-        }
-        // 3) OAuth/PKCE providers (code in query)
-        else if (qp.code) {
+          if (!allowed.includes(qp.type as OtpType)) throw new Error(`Unsupported OTP type: ${qp.type}`);
+          const { error } = await supabase.auth.verifyOtp({
+            type: qp.type as OtpType,
+            token_hash: qp.token_hash,
+          });
+          if (error) throw error;
+          setStatus("ok");
+        } else if (qp.code) {
           const { error } = await supabase.auth.exchangeCodeForSession(url.toString());
           if (error) throw error;
           setStatus("ok");
@@ -70,7 +62,6 @@ export default function AuthCallback() {
           throw new Error("No tokens, token_hash, or code present in callback URL");
         }
 
-        // Who am I? -> redirect by role
         const r = await fetch("/api/auth/whoami", { cache: "no-store" });
         const j: { role?: "student" | "mentor" | "admin" } = await r.json();
         const role = j?.role ?? "student";
